@@ -20,6 +20,21 @@ The system consists of three main components:
 
 ## Setup
 
+### Get the Dataset
+
+Download and extract the MS MARCO passage collection:
+
+```bash
+wget https://msmarco.z22.web.core.windows.net/msmarcoranking/collection.tar.gz
+tar -xzf collection.tar.gz
+mkdir -p data
+mv collection.tsv data/
+```
+
+The dataset contains 8.8M passages in TSV format (passage_id\tpassage_text).
+
+### Install Dependencies
+
 ```bash
 pip install requests beautifulsoup4 streamlit tqdm
 ```
