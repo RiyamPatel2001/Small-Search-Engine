@@ -1,6 +1,7 @@
 import math
 import heapq
 import re
+import time
 from typing import List, Tuple, Dict, Set
 from dataclasses import dataclass
 from merger import Lexicon, DocumentTable, InvertedListReader
@@ -120,40 +121,42 @@ class QueryProcessor:
 
         return tokens
     
-    def process_disjunctive_query(self, query_terms: List[str], k: int = 10) -> List[SearchResult]:
+    def process_disjunctive_query(self, query_terms: List[str], k: int = 10) -> Tuple[List[SearchResult], float]:
         """
         Process disjunctive (OR) query using DAAT.
         Documents containing ANY query term are scored.
-        
+
         Args:
             query_terms: List of query tokens
             k: Number of top results to return
-            
+
         Returns:
-            List of top-k SearchResult objects
+            Tuple of (List of top-k SearchResult objects, query time in seconds)
         """
+        start_time = time.time()
+
         # Remove duplicate terms and filter out terms not in lexicon
         unique_terms = []
         doc_freq_map = {}
-        
+
         for term in query_terms:
             if term not in unique_terms and term in self.lexicon.entries:
                 unique_terms.append(term)
                 doc_freq_map[term] = self.lexicon.entries[term]['doc_count']
-        
+
         if not unique_terms:
-            return []
-        
+            return [], time.time() - start_time
+
         # Open inverted lists for all query terms
         readers = {}
         for term in unique_terms:
             reader = InvertedListReader(self.inverted_lists_path)
             if reader.open(term, self.lexicon):
                 readers[term] = reader
-        
+
         if not readers:
-            return []
-        
+            return [], time.time() - start_time
+
         # DAAT processing with min-heap for next doc_id
         # Each entry: (current_doc_id, term)
         heap = []
@@ -161,138 +164,142 @@ class QueryProcessor:
             doc_id, freq = reader.next_doc()
             if doc_id is not None:
                 heapq.heappush(heap, (doc_id, term))
-        
+
         # Top-k results (max heap by score)
         top_k = []
-        
+
         # Process documents in order
         while heap:
             # Get the smallest doc_id
             current_doc_id, _ = heap[0]
-            
+
             # Collect all terms that have this doc_id
             term_freqs = {}
             terms_to_advance = []
-            
+
             while heap and heap[0][0] == current_doc_id:
                 _, term = heapq.heappop(heap)
                 freq = readers[term].get_frequency()
                 term_freqs[term] = freq
                 terms_to_advance.append(term)
-            
+
             # Score this document
             doc_length = self.doc_table.get_doc_length(current_doc_id)
             score = self.bm25.score_document(term_freqs, doc_freq_map, doc_length)
-            
+
             # Add to top-k results
             passage_id = self.doc_table.get_passage_id(current_doc_id)
             result = SearchResult(current_doc_id, score, passage_id)
-            
+
             if len(top_k) < k:
                 heapq.heappush(top_k, result)
             elif score > top_k[0].score:
                 heapq.heapreplace(top_k, result)
-            
+
             # Advance readers for terms that matched this doc
             for term in terms_to_advance:
                 doc_id, freq = readers[term].next_doc()
                 if doc_id is not None:
                     heapq.heappush(heap, (doc_id, term))
-        
+
         # Close all readers
         for reader in readers.values():
             reader.close()
-        
+
         # Return results sorted by score (descending)
         results = sorted(top_k, key=lambda x: x.score, reverse=True)
-        return results
+        query_time = time.time() - start_time
+        return results, query_time
     
-    def process_conjunctive_query(self, query_terms: List[str], k: int = 10) -> List[SearchResult]:
+    def process_conjunctive_query(self, query_terms: List[str], k: int = 10) -> Tuple[List[SearchResult], float]:
         """
         Process conjunctive (AND) query using DAAT.
         Only documents containing ALL query terms are scored.
-        
+
         Args:
             query_terms: List of query tokens
             k: Number of top results to return
-            
+
         Returns:
-            List of top-k SearchResult objects
+            Tuple of (List of top-k SearchResult objects, query time in seconds)
         """
+        start_time = time.time()
+
         # Remove duplicates and filter terms not in lexicon
         unique_terms = []
         doc_freq_map = {}
-        
+
         for term in query_terms:
             if term not in unique_terms and term in self.lexicon.entries:
                 unique_terms.append(term)
                 doc_freq_map[term] = self.lexicon.entries[term]['doc_count']
-        
+
         if not unique_terms:
-            return []
-        
+            return [], time.time() - start_time
+
         # Open inverted lists for all query terms
         readers = {}
         for term in unique_terms:
             reader = InvertedListReader(self.inverted_lists_path)
             if reader.open(term, self.lexicon):
                 readers[term] = reader
-        
+
         if len(readers) != len(unique_terms):
             # Some terms not found
             for reader in readers.values():
                 reader.close()
-            return []
-        
+            return [], time.time() - start_time
+
         # Sort readers by list length (shortest first for efficiency)
         sorted_terms = sorted(unique_terms, key=lambda t: self.lexicon.entries[t]['doc_count'])
-        
+
         # Top-k results
         top_k = []
-        
+
         # Get first doc from shortest list
         shortest_term = sorted_terms[0]
         doc_id, freq = readers[shortest_term].next_doc()
-        
+
         while doc_id is not None:
             # Check if all other lists contain this doc_id
             term_freqs = {shortest_term: freq}
             all_match = True
-            
+
             for term in sorted_terms[1:]:
                 # Seek to current doc_id in this list
                 found_doc_id, found_freq = readers[term].seek(doc_id)
-                
+
                 if found_doc_id == doc_id:
                     term_freqs[term] = found_freq
                 else:
                     # This document doesn't contain all terms
                     all_match = False
                     break
-            
+
             if all_match:
                 # Score this document
                 doc_length = self.doc_table.get_doc_length(doc_id)
                 score = self.bm25.score_document(term_freqs, doc_freq_map, doc_length)
-                
+
                 passage_id = self.doc_table.get_passage_id(doc_id)
                 result = SearchResult(doc_id, score, passage_id)
-                
+
                 if len(top_k) < k:
                     heapq.heappush(top_k, result)
                 elif score > top_k[0].score:
                     heapq.heapreplace(top_k, result)
-            
+
             # Advance shortest list
             doc_id, freq = readers[shortest_term].next_doc()
-        
+
         # Close all readers
         for reader in readers.values():
             reader.close()
-        
+
         # Return results sorted by score (descending)
         results = sorted(top_k, key=lambda x: x.score, reverse=True)
-        return results
+        query_time = time.time() - start_time
+        return results, query_time
     
 
     def load_passage_text(self, passage_id):
@@ -401,13 +408,16 @@ def run_query_interface(processor: QueryProcessor):
             print(f"\nQuery terms: {query_terms}")
             print(f"Mode: {mode}")
             print("Searching...")
-            
+
             # Process query
             if mode == 'disjunctive':
-                results = processor.process_disjunctive_query(query_terms, k)
+                results, query_time = processor.process_disjunctive_query(query_terms, k)
             else:
-                results = processor.process_conjunctive_query(query_terms, k)
-            
+                results, query_time = processor.process_conjunctive_query(query_terms, k)
+
+            # Display timing information (Google-style)
+            print(f"\nRetrieved {len(results):,} documents from a total of {processor.doc_table.num_docs:,} in {query_time:.3f} seconds")
+
             # Display results
             print(processor.format_result(results))
             

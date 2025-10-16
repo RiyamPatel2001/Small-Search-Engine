@@ -5,3 +5,4 @@ Indexer/guidelines/
 Indexer/index/
 Indexer/__pycache__/
 Indexer/offset_index.json
+Indexer/collection.tar.gz

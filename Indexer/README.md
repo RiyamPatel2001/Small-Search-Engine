@@ -36,7 +36,7 @@ The dataset contains 8.8M passages in TSV format (passage_id\tpassage_text).
 ### Install Dependencies
 
 ```bash
-pip install requests beautifulsoup4 streamlit tqdm
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -68,7 +68,7 @@ python merger.py index/intermediate index/final_index
 python query_processor.py index/final_index data/collection.tsv
 ```
 
-**Browser interface (extra credit):**
+**Browser interface:**
 
 ```bash
 streamlit run app.py
@@ -151,8 +151,6 @@ Built for NYU Tandon CS 6913 (Web Search Engines) Fall 2025. Requirements includ
 - DAAT query processing with BM25 ranking
 - Inverted index API framework with seek operations
 - Both conjunctive and disjunctive query modes
-
-Extra credit features implemented:
 - Browser-accessible interface with Streamlit
 - Snippet generation with term highlighting
 - Offset index for fast passage retrieval

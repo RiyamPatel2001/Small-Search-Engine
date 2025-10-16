@@ -167,16 +167,16 @@ def main():
 
             # Process query
             if mode == "disjunctive":
-                results = processor.process_disjunctive_query(query_terms, k)
+                results, query_time = processor.process_disjunctive_query(query_terms, k)
             else:
-                results = processor.process_conjunctive_query(query_terms, k)
+                results, query_time = processor.process_conjunctive_query(query_terms, k)
 
             # Display results
             if not results:
                 st.warning("No results found.")
                 return
 
-            st.success(f"Found **{len(results)}** results")
+            st.success(f"Retrieved **{len(results):,}** documents from a total of **{doc_table.num_docs:,}** in **{query_time:.3f}** seconds")
 
             # Initialize snippet generator if offset index available
             snippet_gen = None
