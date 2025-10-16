@@ -1,6 +1,6 @@
 """
 Multi-threaded web crawler that discovers and crawls web pages based on a search query.
-Uses DuckDuckGo to find seed URLs, then crawls pages while respecting robots.txt rules.
+Uses DDGS metasearch library to find seed URLs, then crawls pages while respecting robots.txt rules.
 Implements a priority queue system to diversify crawling across multiple domains.
 """
 
@@ -129,8 +129,8 @@ class WebCrawler:
             f.write(final_stats_str + "\n")
 
     def get_seed_pages(self):
-        """Search using DuckDuckGo to get seed URLs."""
-        self.log_debug(f"Searching DuckDuckGo for: '{self.search_term}'")
+        """Search using DDGS metasearch to get seed URLs."""
+        self.log_debug(f"Searching via DDGS for: '{self.search_term}'")
         urls = []
         try:
             with DDGS() as ddgs:
@@ -138,9 +138,9 @@ class WebCrawler:
                 for r in results_generator:
                     urls.append(r['href'])
         except Exception as e:
-            self.log_debug(f"An error occurred during DuckDuckGo search: {e}")
-        
-        self.log_debug(f"DuckDuckGo search returned {len(urls)} URLs")
+            self.log_debug(f"An error occurred during DDGS search: {e}")
+
+        self.log_debug(f"DDGS metasearch returned {len(urls)} URLs")
 
         self.log_debug("Seed URLs:")
         for i, url in enumerate(urls, 1):

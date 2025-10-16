@@ -9,7 +9,7 @@ The web crawler follows a multi-threaded breadth-first search approach with prio
    - Creates a timestamped log file for output
 
 2. SEED GENERATION
-   - Queries DuckDuckGo search API with the provided search term
+   - Queries DDGS metasearch library with the provided search term
    - Retrieves the specified number of seed URLs from search results
    - Adds seed URLs to the priority queue with initial priority scores
    - Marks these URLs as seed URLs (they bypass robots.txt checks)
@@ -65,7 +65,7 @@ Standard Python Libraries:
 Third-Party Libraries:
 - requests: HTTP requests with session management and retry logic
 - beautifulsoup4: HTML parsing and link extraction
-- ddgs: DuckDuckGo search API for seed URL generation
+- ddgs: Metasearch library for seed URL generation
 - urllib3: Advanced HTTP connection pooling
 
 KNOWN LIMITATIONS AND BUGS

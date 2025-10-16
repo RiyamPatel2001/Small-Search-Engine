@@ -1,10 +1,10 @@
 # Multi-threaded Web Crawler
 
-A straightforward Python web crawler built for a grad school assignment. Crawls web pages starting from DuckDuckGo search results and logs everything it finds.
+A straightforward Python web crawler built for a grad school assignment. Crawls web pages starting from metasearch results (via DDGS) and logs everything it finds.
 
 ## What it does
 
-- Searches DuckDuckGo for your query to get starting URLs
+- Uses DDGS to search for your query to get starting URLs
 - Crawls pages using multiple threads for speed
 - Respects robots.txt (mostly)
 - Prioritizes crawling across different domains instead of going deep into one site
@@ -13,7 +13,7 @@ A straightforward Python web crawler built for a grad school assignment. Crawls 
 ## Setup
 
 ```bash
-pip install requests beautifulsoup4 duckduckgo-search urllib3
+pip install requests beautifulsoup4 ddgs urllib3
 ```
 
 ## Usage

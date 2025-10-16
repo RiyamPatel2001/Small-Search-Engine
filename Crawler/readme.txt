@@ -13,14 +13,14 @@ REQUIREMENTS
 - Required libraries (install via pip):
   * requests
   * beautifulsoup4
-  * duckduckgo-search (ddgs)
+  * ddgs (metasearch library)
   * urllib3
 
 
 INSTALLATION
 ------------
 Install required dependencies:
-    pip install requests beautifulsoup4 duckduckgo-search urllib3
+    pip install requests beautifulsoup4 ddgs urllib3
 
 
 HOW TO RUN
@@ -37,7 +37,7 @@ COMMAND LINE PARAMETERS
 --search <term>        (REQUIRED) Search term to find initial seed pages
 --max_pages <n>        Maximum number of pages to crawl (default: 500)
 --threads <n>          Number of concurrent worker threads (default: 10)
---seed_pages <n>       Number of seed URLs to fetch from DuckDuckGo (default: 10)
+--seed_pages <n>       Number of seed URLs to fetch via DDGS metasearch (default: 10)
 
 
 OUTPUT

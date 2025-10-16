@@ -1,1 +1,7 @@
 Crawler/crawler_venv/
+Indexer/venv/
+Indexer/data/
+Indexer/guidelines/
+Indexer/index/
+Indexer/__pycache__/
+Indexer/offset_index.json
